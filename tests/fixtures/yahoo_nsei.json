@@ -1,0 +1,3 @@
+{"chart":{"result":[{"meta":{"currency":"INR","symbol":"^NSEI","exchangeTimezoneName":"Asia/Kolkata","regularMarketPrice":24500.5,"regularMarketTime":1762594200,"chartPreviousClose":24000.0},
+"timestamp":[1762227900,1762314300,1762400700,1762487100,1762573500],
+"indicators":{"quote":[{"close":[24100.0,24200.0,24300.0,24250.0,24500.5]}]}}],"error":null}}

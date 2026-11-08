@@ -1,0 +1,14 @@
+# Core (all free / open source)
+python-telegram-bot[job-queue,rate-limiter]==22.8   # Telegram bot + scheduler (APScheduler)
+httpx==0.28.1                                       # HTTP client for feeds, Gemini, Groq, Yahoo
+feedparser==6.0.14                                  # RSS/Atom parsing
+SQLAlchemy==2.1.8                                   # SQLite (default) / PostgreSQL
+python-dotenv==1.2.4                                # loads .env
+PyYAML==6.0.3                                       # config/sources.yaml
+tzdata==2026.6                                      # timezone data (needed on Windows)
+
+# Optional: Claude provider (PAID API). Safe to keep installed even if unused.
+anthropic==2.6.0
+
+# PostgreSQL driver - uncomment if you set DATABASE_URL=postgresql://...
+# psycopg[binary]==3.2.12

@@ -1,0 +1,13 @@
+services:
+  newsbot:
+    build: .
+    container_name: newsbot
+    restart: unless-stopped        # starts on boot, restarts after crashes
+    env_file: .env
+    environment:
+      - HEALTH_PORT=8080
+    volumes:
+      - ./data:/app/data           # SQLite database survives restarts/upgrades
+      - ./logs:/app/logs
+    ports:
+      - "127.0.0.1:8080:8080"      # health check, local only

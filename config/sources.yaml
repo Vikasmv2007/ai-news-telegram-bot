@@ -1,0 +1,119 @@
+# News sources used by the bot.
+#
+# Only publicly offered RSS feeds and official announcement feeds are used.
+# The bot reads the headline + the short description each feed publishes;
+# it never scrapes full article pages or bypasses paywalls.
+#
+# Fields:
+#   name      - shown to the user as "Source"
+#   url       - RSS/Atom URL
+#   category  - india_market | global_market | tech | india_world
+#   region    - india | global
+#   weight    - source priority 1 (low) .. 3 (high). Official sources = 3.
+#   official  - true for regulators/exchanges (gets extra priority)
+#
+# If a feed stops working, the bot logs a warning and continues with the
+# others. Remove or fix it here. Run `python -m app.main --check-feeds` to
+# test every feed.
+
+feeds:
+  # ---------- Official sources (regulators) ----------
+  - {name: RBI Press Releases, url: "https://www.rbi.org.in/pressreleases_rss.xml", category: india_market, region: india, weight: 3, official: true}
+  - {name: RBI Notifications, url: "https://www.rbi.org.in/notifications_rss.xml", category: india_market, region: india, weight: 3, official: true}
+  - {name: SEBI, url: "https://www.sebi.gov.in/sebirss.xml", category: india_market, region: india, weight: 3, official: true}
+
+  # ---------- Indian stock market ----------
+  - {name: Economic Times Markets, url: "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms", category: india_market, region: india, weight: 2}
+  - {name: Economic Times Stocks, url: "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms", category: india_market, region: india, weight: 2}
+  - {name: Moneycontrol Markets, url: "https://www.moneycontrol.com/rss/marketreports.xml", category: india_market, region: india, weight: 2}
+  - {name: Moneycontrol Business, url: "https://www.moneycontrol.com/rss/business.xml", category: india_market, region: india, weight: 2}
+  - {name: Business Standard Markets, url: "https://www.business-standard.com/rss/markets-106.rss", category: india_market, region: india, weight: 2}
+  - {name: Mint Markets, url: "https://www.livemint.com/rss/markets", category: india_market, region: india, weight: 2}
+  - {name: Mint Companies, url: "https://www.livemint.com/rss/companies", category: india_market, region: india, weight: 2}
+  - {name: Financial Express Market, url: "https://www.financialexpress.com/market/feed/", category: india_market, region: india, weight: 2}
+
+  # ---------- Global markets & economy ----------
+  - {name: CNBC Markets, url: "https://www.cnbc.com/id/15839069/device/rss/rss.html", category: global_market, region: global, weight: 2}
+  - {name: CNBC Economy, url: "https://www.cnbc.com/id/20910258/device/rss/rss.html", category: global_market, region: global, weight: 2}
+  - {name: BBC Business, url: "https://feeds.bbci.co.uk/news/business/rss.xml", category: global_market, region: global, weight: 2}
+
+  # ---------- Technology & AI ----------
+  - {name: TechCrunch AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/", category: tech, region: global, weight: 2}
+  - {name: TechCrunch, url: "https://techcrunch.com/feed/", category: tech, region: global, weight: 2}
+  - {name: The Verge, url: "https://www.theverge.com/rss/index.xml", category: tech, region: global, weight: 2}
+  - {name: BBC Technology, url: "https://feeds.bbci.co.uk/news/technology/rss.xml", category: tech, region: global, weight: 2}
+  - {name: CNBC Technology, url: "https://www.cnbc.com/id/19854910/device/rss/rss.html", category: tech, region: global, weight: 2}
+
+  # ---------- India & World ----------
+  - {name: The Hindu National, url: "https://www.thehindu.com/news/national/feeder/default.rss", category: india_world, region: india, weight: 2}
+  - {name: The Hindu International, url: "https://www.thehindu.com/news/international/feeder/default.rss", category: india_world, region: global, weight: 2}
+  - {name: The Hindu Business, url: "https://www.thehindu.com/business/feeder/default.rss", category: india_world, region: india, weight: 2}
+  - {name: Indian Express India, url: "https://indianexpress.com/section/india/feed/", category: india_world, region: india, weight: 2}
+  - {name: BBC World, url: "https://feeds.bbci.co.uk/news/world/rss.xml", category: india_world, region: global, weight: 2}
+
+# Google News RSS search queries. Google News aggregates many publishers
+# (including Reuters, which no longer offers public RSS feeds). The real
+# publisher name is read from each item.
+google_news_queries:
+  - {query: "Sensex Nifty when:1d", category: india_market, region: india, weight: 2}
+  - {query: "RBI repo rate OR RBI policy when:2d", category: india_market, region: india, weight: 2}
+  - {query: "FII DII flows India when:2d", category: india_market, region: india, weight: 2}
+  - {query: "IPO India NSE BSE when:2d", category: india_market, region: india, weight: 1}
+  - {query: "site:reuters.com markets when:1d", category: global_market, region: global, weight: 2}
+  - {query: "Federal Reserve interest rates when:2d", category: global_market, region: global, weight: 2}
+  - {query: "US CPI inflation OR jobs report when:2d", category: global_market, region: global, weight: 2}
+  - {query: "crude oil prices OR gold prices when:1d", category: global_market, region: global, weight: 1}
+  - {query: "crypto regulation SEC when:3d", category: global_market, region: global, weight: 1}
+  - {query: "OpenAI OR Anthropic OR NVIDIA OR \"Google DeepMind\" when:1d", category: tech, region: global, weight: 2}
+  - {query: "site:reuters.com technology when:1d", category: tech, region: global, weight: 2}
+
+# Company watchlist: Yahoo Finance symbol -> names used to match news.
+# Add your own; /watchlist add SYMBOL also works from Telegram.
+company_aliases:
+  RELIANCE.NS: [Reliance Industries, Reliance, RIL, Jio]
+  TCS.NS: [Tata Consultancy Services, TCS]
+  HDFCBANK.NS: [HDFC Bank]
+  INFY.NS: [Infosys]
+  ICICIBANK.NS: [ICICI Bank]
+  SBIN.NS: [State Bank of India, SBI]
+  BHARTIARTL.NS: [Bharti Airtel, Airtel]
+  ITC.NS: [ITC]
+  LT.NS: [Larsen & Toubro, L&T]
+  TATAMOTORS.NS: [Tata Motors]
+  MARUTI.NS: [Maruti Suzuki, Maruti]
+  SUNPHARMA.NS: [Sun Pharma, Sun Pharmaceutical]
+  WIPRO.NS: [Wipro]
+  HCLTECH.NS: [HCLTech, HCL Technologies]
+  ADANIENT.NS: [Adani Enterprises, Adani Group, Adani]
+  NVDA: [NVIDIA, Nvidia]
+  AAPL: [Apple]
+  MSFT: [Microsoft]
+  GOOGL: [Alphabet, Google]
+  AMZN: [Amazon]
+  META: [Meta Platforms, Meta]
+
+# Market data symbols (Yahoo Finance). Data is DELAYED and unofficial.
+market_symbols:
+  india:
+    "^NSEI": NIFTY 50
+    "^BSESN": SENSEX
+    "^NSEBANK": BANK NIFTY
+  india_sectors:
+    "^CNXIT": NIFTY IT
+    "^CNXAUTO": NIFTY AUTO
+    "^CNXPHARMA": NIFTY PHARMA
+    "^CNXENERGY": NIFTY ENERGY
+    "^CNXFMCG": NIFTY FMCG
+  global:
+    "^GSPC": S&P 500
+    "^IXIC": NASDAQ
+    "^DJI": Dow Jones
+    "^N225": Nikkei 225
+    "^HSI": Hang Seng
+    "^FTSE": FTSE 100
+    "^GDAXI": DAX
+  commodities:
+    "GC=F": Gold (USD/oz)
+    "BZ=F": Brent Crude (USD/bbl)
+    "INR=X": USD/INR
+    "BTC-USD": Bitcoin (USD)

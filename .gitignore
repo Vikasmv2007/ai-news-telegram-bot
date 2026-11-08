@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# runtime data
+data/*
+logs/*
+*.db
+*.db-wal
+*.db-shm
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# editors / OS
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# keep folder placeholders
+!data/.gitkeep
+!logs/.gitkeep

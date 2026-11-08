@@ -1,0 +1,122 @@
+# Scheduled Telegram briefings on GitHub Actions - free, no server needed.
+#   + no PC or server has to stay on, no credit card
+#   - interactive Telegram commands (/now, /settings, ...) do NOT work in this mode
+#     (use the "Run workflow" menu instead); GitHub may start scheduled runs 5-30 min late
+#
+# Setup (see README > "Run it free on GitHub Actions"):
+#   1. Fork this repository (or use it as a template).
+#   2. Settings > Secrets and variables > Actions > Secrets > New repository secret:
+#        TELEGRAM_BOT_TOKEN, ALLOWED_CHAT_IDS, GEMINI_API_KEY (optional: GROQ_API_KEY)
+#   3. Same page > Variables tab > New repository variable: ENABLE_BRIEFINGS = true
+#      (scheduled runs stay OFF until you do this, so forks don't fail every day)
+#   4. Actions tab > enable workflows > news-briefings > Run workflow to test.
+# Use EITHER this OR a 24/7 bot (PC / Docker / VM), not both, or you'll get briefings twice.
+name: news-briefings
+
+on:
+  schedule:            # times are UTC (IST = UTC+5:30)
+    - cron: "30 1 * * *"     # 07:00 IST morning
+    - cron: "30 3 * * 1-5"   # 09:00 IST pre-market (weekdays)
+    - cron: "30 7 * * 1-5"   # 13:00 IST midday (weekdays)
+    - cron: "30 10 * * 1-5"  # 16:00 IST closing (weekdays)
+    - cron: "30 14 * * *"    # 20:00 IST evening
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "What to send now"
+        type: choice
+        default: now
+        options:
+          - now        # latest stories you haven't received yet
+          - today      # today's complete briefing
+          - india      # Indian news
+          - global     # international news
+          - market     # market news + NIFTY/SENSEX snapshot
+          - tech       # technology & AI
+          - trending   # most important stories
+          - morning    # the scheduled briefings (sent even if already sent today)
+          - premarket
+          - midday
+          - closing
+          - evening
+
+concurrency:
+  group: news-briefings
+  cancel-in-progress: false
+
+jobs:
+  run:
+    # Manual runs always work; scheduled runs only once ENABLE_BRIEFINGS=true is set.
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_BRIEFINGS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Persist the SQLite database between runs (dedup + "never send twice")
+      - uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: news-db-${{ github.run_id }}
+          restore-keys: news-db-
+
+      - name: Pick slot
+        id: slot
+        run: |
+          case "${{ github.event.schedule }}" in
+            "30 1 * * *")   echo "slot=morning"   >> "$GITHUB_OUTPUT" ;;
+            "30 3 * * 1-5") echo "slot=premarket" >> "$GITHUB_OUTPUT" ;;
+            "30 7 * * 1-5") echo "slot=midday"    >> "$GITHUB_OUTPUT" ;;
+            "30 10 * * 1-5") echo "slot=closing"  >> "$GITHUB_OUTPUT" ;;
+            "30 14 * * *")  echo "slot=evening"   >> "$GITHUB_OUTPUT" ;;
+            *)              echo "slot=${{ inputs.slot || 'now' }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Check secrets (values are never shown)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALLOWED_CHAT_IDS: ${{ secrets.ALLOWED_CHAT_IDS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          ok=1
+          for name in TELEGRAM_BOT_TOKEN ALLOWED_CHAT_IDS GEMINI_API_KEY GROQ_API_KEY; do
+            if [ -n "${!name}" ]; then echo "OK      $name is set"; else echo "MISSING $name"; fi
+          done
+          [ -n "$TELEGRAM_BOT_TOKEN" ] || { echo "::error::Secret TELEGRAM_BOT_TOKEN is missing (Settings > Secrets and variables > Actions > Repository secrets)"; ok=0; }
+          [ -n "$ALLOWED_CHAT_IDS" ] || { echo "::error::Secret ALLOWED_CHAT_IDS is missing"; ok=0; }
+          if [ -n "$ALLOWED_CHAT_IDS" ] && ! [[ "$ALLOWED_CHAT_IDS" =~ ^[[:space:]]*-?[0-9]+([[:space:]]*,[[:space:]]*-?[0-9]+)*[[:space:]]*$ ]]; then
+            echo "::error::ALLOWED_CHAT_IDS must be only numbers, e.g. 123456789 (no quotes, no text)"; ok=0; fi
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && ! [[ "$TELEGRAM_BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
+            echo "::error::TELEGRAM_BOT_TOKEN looks wrong: it must look like 123456789:AAH... (no spaces or quotes)"; ok=0; fi
+          [ -n "$GEMINI_API_KEY$GROQ_API_KEY" ] || echo "::warning::No AI key set - briefings will use feed text only"
+          [ "$ok" = 1 ]
+
+      - name: Send briefing
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALLOWED_CHAT_IDS: ${{ secrets.ALLOWED_CHAT_IDS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TIMEZONE: Asia/Kolkata
+          SLOT: ${{ steps.slot.outputs.slot }}
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          case "$SLOT" in
+            morning|premarket|midday|closing|evening)
+              if [ "$MANUAL" = "true" ]; then python -m app.main --run-slot "$SLOT" --force
+              else python -m app.main --run-slot "$SLOT"; fi ;;
+            *) python -m app.main --send "$SLOT" ;;
+          esac
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data
+          key: news-db-${{ github.run_id }}

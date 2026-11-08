@@ -1,0 +1,19 @@
+# systemd unit for Linux servers (e.g. Oracle Cloud Always Free VM).
+# Install:  sudo cp deploy/newsbot.service /etc/systemd/system/
+#           sudo systemctl daemon-reload && sudo systemctl enable --now newsbot
+# Logs:     journalctl -u newsbot -f
+[Unit]
+Description=AI News Intelligence Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/news-intelligence-bot
+ExecStart=/home/ubuntu/news-intelligence-bot/.venv/bin/python -m app.main
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
