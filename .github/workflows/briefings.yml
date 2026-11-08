@@ -14,12 +14,19 @@
 name: news-briefings
 
 on:
-  schedule:            # times are UTC (IST = UTC+5:30)
-    - cron: "30 1 * * *"     # 07:00 IST morning
-    - cron: "30 3 * * 1-5"   # 09:00 IST pre-market (weekdays)
-    - cron: "30 7 * * 1-5"   # 13:00 IST midday (weekdays)
-    - cron: "30 10 * * 1-5"  # 16:00 IST closing (weekdays)
-    - cron: "30 14 * * *"    # 20:00 IST evening
+  schedule:            # times are UTC (IST = UTC+5:30). Off the busy :00/:30 minutes,
+                       # each with a backup run ~45 min later (no duplicates: a briefing
+                       # is sent at most once per day, the backup only fills a skipped run)
+    - cron: "23 1 * * *"     # 06:53 IST morning
+    - cron: "8 2 * * *"      # 07:38 IST morning (backup)
+    - cron: "23 3 * * 1-5"   # 08:53 IST pre-market (weekdays)
+    - cron: "8 4 * * 1-5"    # 09:38 IST pre-market (backup)
+    - cron: "23 7 * * 1-5"   # 12:53 IST midday (weekdays)
+    - cron: "8 8 * * 1-5"    # 13:38 IST midday (backup)
+    - cron: "23 10 * * 1-5"  # 15:53 IST closing (weekdays)
+    - cron: "8 11 * * 1-5"   # 16:38 IST closing (backup)
+    - cron: "23 14 * * *"    # 19:53 IST evening
+    - cron: "8 15 * * *"     # 20:38 IST evening (backup)
   workflow_dispatch:
     inputs:
       slot:
@@ -69,11 +76,11 @@ jobs:
         id: slot
         run: |
           case "${{ github.event.schedule }}" in
-            "30 1 * * *")   echo "slot=morning"   >> "$GITHUB_OUTPUT" ;;
-            "30 3 * * 1-5") echo "slot=premarket" >> "$GITHUB_OUTPUT" ;;
-            "30 7 * * 1-5") echo "slot=midday"    >> "$GITHUB_OUTPUT" ;;
-            "30 10 * * 1-5") echo "slot=closing"  >> "$GITHUB_OUTPUT" ;;
-            "30 14 * * *")  echo "slot=evening"   >> "$GITHUB_OUTPUT" ;;
+            "23 1 * * *"|"8 2 * * *")       echo "slot=morning"   >> "$GITHUB_OUTPUT" ;;
+            "23 3 * * 1-5"|"8 4 * * 1-5")   echo "slot=premarket" >> "$GITHUB_OUTPUT" ;;
+            "23 7 * * 1-5"|"8 8 * * 1-5")   echo "slot=midday"    >> "$GITHUB_OUTPUT" ;;
+            "23 10 * * 1-5"|"8 11 * * 1-5") echo "slot=closing"   >> "$GITHUB_OUTPUT" ;;
+            "23 14 * * *"|"8 15 * * *")     echo "slot=evening"   >> "$GITHUB_OUTPUT" ;;
             *)              echo "slot=${{ inputs.slot || 'now' }}" >> "$GITHUB_OUTPUT" ;;
           esac
 
