@@ -75,14 +75,20 @@ jobs:
       - name: Pick slot
         id: slot
         run: |
-          case "${{ github.event.schedule }}" in
-            "23 1 * * *"|"8 2 * * *")       echo "slot=morning"   >> "$GITHUB_OUTPUT" ;;
-            "23 3 * * 1-5"|"8 4 * * 1-5")   echo "slot=premarket" >> "$GITHUB_OUTPUT" ;;
-            "23 7 * * 1-5"|"8 8 * * 1-5")   echo "slot=midday"    >> "$GITHUB_OUTPUT" ;;
-            "23 10 * * 1-5"|"8 11 * * 1-5") echo "slot=closing"   >> "$GITHUB_OUTPUT" ;;
-            "23 14 * * *"|"8 15 * * *")     echo "slot=evening"   >> "$GITHUB_OUTPUT" ;;
-            *)              echo "slot=${{ inputs.slot || 'now' }}" >> "$GITHUB_OUTPUT" ;;
-          esac
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Pick the briefing from the current India time, so any cron line works.
+            t=$(TZ=Asia/Kolkata date +%H%M); t=$((10#$t))
+            if   [ $t -ge 600 ]  && [ $t -lt 830 ];  then slot=morning
+            elif [ $t -ge 830 ]  && [ $t -lt 1100 ]; then slot=premarket
+            elif [ $t -ge 1200 ] && [ $t -lt 1500 ]; then slot=midday
+            elif [ $t -ge 1530 ] && [ $t -lt 1800 ]; then slot=closing
+            elif [ $t -ge 1900 ] && [ $t -lt 2300 ]; then slot=evening
+            else slot=now; fi
+            echo "Scheduled run at $t IST -> $slot"
+          else
+            slot="${{ inputs.slot || 'now' }}"
+          fi
+          echo "slot=$slot" >> "$GITHUB_OUTPUT"
 
       - name: Check secrets (values are never shown)
         env:
